@@ -13,7 +13,8 @@ var _ = Describe("Default Markdown table markdown", func() {
 	var formatter markdown.TableFormatter
 
 	BeforeEach(func() {
-		formatter = markdown.NewDefaultTableFormatter([]string{"column 1", "column 2", "column 3"})
+		formatter = markdown.NewTableFormatterBuilder().
+			Build("column 1", "column 2", "column 3")
 	})
 
 	It("formats accordingly", func() {
@@ -43,7 +44,9 @@ var _ = Describe("Pretty Markdown table markdown", func() {
 	var formatter markdown.TableFormatter
 
 	BeforeEach(func() {
-		formatter = markdown.NewPrettyTableFormatter([]string{"column 1", "column 2", "column 3"})
+		formatter = markdown.NewTableFormatterBuilder().
+			WithPrettyPrint().
+			Build("column 1", "column 2", "column 3")
 	})
 
 	It("pretty-prints accordingly", func() {

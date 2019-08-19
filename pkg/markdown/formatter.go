@@ -9,13 +9,13 @@ type TableFormatter interface {
 	Format(data [][]string) (string, error)
 }
 
-func NewDefaultTableFormatter(headers []string) TableFormatter {
+func newDefaultTableFormatter(headers []string) TableFormatter {
 	return &defaultTableFormatter{
 		config: &config{headers: headers},
 	}
 }
 
-func NewPrettyTableFormatter(headers []string) TableFormatter {
+func newPrettyTableFormatter(headers []string) TableFormatter {
 	return &prettyTableFormatter{
 		config: &config{headers: headers},
 	}
