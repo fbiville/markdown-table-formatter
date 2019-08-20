@@ -51,10 +51,11 @@ func (formatter *prettyTableFormatter) Format(data [][]string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	widths := prettyTable.widths
 	builder := &strings.Builder{}
-	appendHeaders(builder, formatter.config.headers)
+	appendHeaders(builder, replacePadded(formatter.config.headers, widths))
 	for _, row := range prettyTable.content {
-		builder.WriteString(joinValues(replacePadded(row, prettyTable.widths)))
+		builder.WriteString(joinValues(replacePadded(row, widths)))
 	}
 	return builder.String(), nil
 }

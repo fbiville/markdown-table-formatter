@@ -62,6 +62,19 @@ var _ = Describe("Pretty Markdown table markdown", func() {
 `, "\n")))
 	})
 
+	It("pads columns if necessary", func() {
+		output, err := formatter.Format([][]string{
+			{"long value 1", "val 2", "very long value 3"},
+		})
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(Equal(strings.TrimLeft(`
+| column 1     | column 2 | column 3          |
+| ------------ | -------- | ----------------- |
+| long value 1 | val 2    | very long value 3 |
+`, "\n")))
+	})
+
 	It("fails to format if the data dimension does not match the headers", func() {
 		_, err := formatter.Format([][]string{
 			{"value 1", "value 2"},
