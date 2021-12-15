@@ -9,23 +9,27 @@ type TableFormatter interface {
 	Format(data [][]string) (string, error)
 }
 
-func newDefaultTableFormatter(headers []string) TableFormatter {
+func newDefaultTableFormatter(headers []string, sortFns []CompareColumnValuesFn) TableFormatter {
 	return &defaultTableFormatter{
-		config: &config{headers: headers},
+		config:  &config{headers: headers},
+		sortFns: sortFns,
 	}
 }
 
-func newPrettyTableFormatter(headers []string) TableFormatter {
+func newPrettyTableFormatter(headers []string, sortFns []CompareColumnValuesFn) TableFormatter {
 	return &prettyTableFormatter{
-		config: &config{headers: headers},
+		config:  &config{headers: headers},
+		sortFns: sortFns,
 	}
 }
 
 type defaultTableFormatter struct {
-	config *config
+	config  *config
+	sortFns []CompareColumnValuesFn
 }
 
 func (formatter *defaultTableFormatter) Format(data [][]string) (string, error) {
+	SortTable(data, formatter.sortFns...)
 	builder := &strings.Builder{}
 	appendHeaders(builder, formatter.config.headers)
 	for rowIndex, row := range data {
@@ -38,7 +42,8 @@ func (formatter *defaultTableFormatter) Format(data [][]string) (string, error) 
 }
 
 type prettyTableFormatter struct {
-	config *config
+	config  *config
+	sortFns []CompareColumnValuesFn
 }
 
 type prettyTable struct {
@@ -47,6 +52,7 @@ type prettyTable struct {
 }
 
 func (formatter *prettyTableFormatter) Format(data [][]string) (string, error) {
+	SortTable(data, formatter.sortFns...)
 	prettyTable, err := formatter.preComputeFormattedData(data)
 	if err != nil {
 		return "", err

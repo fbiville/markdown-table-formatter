@@ -93,3 +93,56 @@ func TestPrettyPrintedRendering(st *testing.T) {
 		}
 	})
 }
+
+func TestSortedRendering(st *testing.T) {
+	headers := []string{"column 1", "column 2", "column 3"}
+	data := [][]string{
+		{"v1", "v1.1", "v1.1.1"},
+		{"w2", "w2.2", "w2.2.2"},
+		{"w2", "z2.2", "w1.1.1"},
+		{"z3", "z3.3", "z3.3.3"},
+	}
+	formatterBuilder := markdown.NewTableFormatterBuilder().WithAlphabeticalSortIn(markdown.DESCENDING_ORDER)
+
+	st.Run("prints sorted values", func(t *testing.T) {
+		formatter := formatterBuilder.Build(headers...)
+
+		actual, err := formatter.Format(data)
+
+		if err != nil {
+			t.Errorf("Expected no error but got %v", err)
+		}
+		expected := strings.TrimLeft(`
+| column 1 | column 2 | column 3 |
+| -------- | -------- | -------- |
+| z3 | z3.3 | z3.3.3 |
+| w2 | z2.2 | w1.1.1 |
+| w2 | w2.2 | w2.2.2 |
+| v1 | v1.1 | v1.1.1 |
+`, "\n")
+		if expected != actual {
+			t.Errorf("Expected %q but got %q", expected, actual)
+		}
+	})
+
+	st.Run("pretty-prints sorted values", func(t *testing.T) {
+		formatter := formatterBuilder.WithPrettyPrint().Build(headers...)
+
+		actual, err := formatter.Format(data)
+
+		if err != nil {
+			t.Errorf("Expected no error but got %v", err)
+		}
+		expected := strings.TrimLeft(`
+| column 1 | column 2 | column 3 |
+| -------- | -------- | -------- |
+| z3       | z3.3     | z3.3.3   |
+| w2       | z2.2     | w1.1.1   |
+| w2       | w2.2     | w2.2.2   |
+| v1       | v1.1     | v1.1.1   |
+`, "\n")
+		if expected != actual {
+			t.Errorf("Expected %q but got %q", expected, actual)
+		}
+	})
+}
