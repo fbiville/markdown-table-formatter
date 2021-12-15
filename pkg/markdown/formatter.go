@@ -28,12 +28,17 @@ type defaultTableFormatter struct {
 	sortFns []CompareColumnValuesFn
 }
 
-func (formatter *defaultTableFormatter) Format(data [][]string) (string, error) {
-	SortTable(data, formatter.sortFns...)
+func (dtf *defaultTableFormatter) Format(data [][]string) (string, error) {
+	// this could be checked before but would require incompatible API change
+	if err := checkSortingConfiguration(dtf.sortFns, dtf.config.headers); err != nil {
+		return "", err
+	}
+
+	SortTable(data, dtf.sortFns...)
 	builder := &strings.Builder{}
-	appendHeaders(builder, formatter.config.headers)
+	appendHeaders(builder, dtf.config.headers)
 	for rowIndex, row := range data {
-		if err := formatter.config.validateRow(rowIndex, row); err != nil {
+		if err := dtf.config.validateRow(rowIndex, row); err != nil {
 			return "", err
 		}
 		builder.WriteString(joinValues(row))
@@ -51,28 +56,32 @@ type prettyTable struct {
 	content [][]string
 }
 
-func (formatter *prettyTableFormatter) Format(data [][]string) (string, error) {
-	SortTable(data, formatter.sortFns...)
-	prettyTable, err := formatter.preComputeFormattedData(data)
+func (ptf *prettyTableFormatter) Format(data [][]string) (string, error) {
+	// this could be checked before but would require incompatible API change
+	if err := checkSortingConfiguration(ptf.sortFns, ptf.config.headers); err != nil {
+		return "", err
+	}
+	SortTable(data, ptf.sortFns...)
+	prettyTable, err := ptf.preComputeFormattedData(data)
 	if err != nil {
 		return "", err
 	}
 	widths := prettyTable.widths
 	builder := &strings.Builder{}
-	appendHeaders(builder, replacePadded(formatter.config.headers, widths))
+	appendHeaders(builder, replacePadded(ptf.config.headers, widths))
 	for _, row := range prettyTable.content {
 		builder.WriteString(joinValues(replacePadded(row, widths)))
 	}
 	return builder.String(), nil
 }
 
-func (formatter *prettyTableFormatter) preComputeFormattedData(data [][]string) (*prettyTable, error) {
+func (ptf *prettyTableFormatter) preComputeFormattedData(data [][]string) (*prettyTable, error) {
 	var widths []int
-	for _, header := range formatter.config.headers {
+	for _, header := range ptf.config.headers {
 		widths = append(widths, len(header))
 	}
 	for rowIndex, row := range data {
-		if err := formatter.config.validateRow(rowIndex, row); err != nil {
+		if err := ptf.config.validateRow(rowIndex, row); err != nil {
 			return nil, err
 		}
 		for columnIndex, cell := range row {
@@ -122,4 +131,11 @@ func replacePadded(items []string, widths []int) []string {
 		result = append(result, fmt.Sprintf(format, item))
 	}
 	return result
+}
+
+func checkSortingConfiguration(sortFns []CompareColumnValuesFn, headers []string) error {
+	if len(sortFns) > len(headers) {
+		return fmt.Errorf("expected at most %d sort functions, %d given", len(headers), len(sortFns))
+	}
+	return nil
 }

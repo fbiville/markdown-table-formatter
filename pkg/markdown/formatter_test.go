@@ -145,4 +145,29 @@ func TestSortedRendering(st *testing.T) {
 			t.Errorf("Expected %q but got %q", expected, actual)
 		}
 	})
+
+	st.Run("fails printing with too many sort functions", func(t *testing.T) {
+		_, err := markdown.NewTableFormatterBuilder().
+			WithCustomSort(strings.Compare, strings.Compare, strings.Compare).
+			Build("header1", "header2").
+			Format([][]string{})
+
+		expected := "expected at most 2 sort functions, 3 given"
+		if err == nil || err.Error() != expected {
+			t.Errorf("Expected error with message %q, but got %v", expected, err)
+		}
+	})
+
+	st.Run("fails pretty-printing with too many sort functions", func(t *testing.T) {
+		_, err := markdown.NewTableFormatterBuilder().
+			WithCustomSort(strings.Compare, strings.Compare, strings.Compare).
+			WithPrettyPrint().
+			Build("header1", "header2").
+			Format([][]string{})
+
+		expected := "expected at most 2 sort functions, 3 given"
+		if err == nil || err.Error() != expected {
+			t.Errorf("Expected error with message %q, but got %v", expected, err)
+		}
+	})
 }
