@@ -137,5 +137,16 @@ func checkSortingConfiguration(sortFns []SortFunction, headers []string) error {
 	if len(sortFns) > len(headers) {
 		return fmt.Errorf("expected at most %d sort functions, %d given", len(headers), len(sortFns))
 	}
+	columnCount := make(map[int]struct{}, len(headers))
+	for _, sortFn := range sortFns {
+		if sortFn.Column >= len(headers) {
+			return fmt.Errorf("expected column index to be between 0 included and %d excluded, got %d", len(headers), sortFn.Column)
+		}
+		if _, found := columnCount[sortFn.Column]; found {
+			return fmt.Errorf("expected at most 1 sort function for column index %d, found at least 2", sortFn.Column)
+		}
+		columnCount[sortFn.Column] = struct{}{}
+	}
+
 	return nil
 }

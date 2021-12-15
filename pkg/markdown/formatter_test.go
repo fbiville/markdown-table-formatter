@@ -161,6 +161,33 @@ func TestSortedRendering(st *testing.T) {
 		}
 	})
 
+	st.Run("fails printing with too high column index", func(t *testing.T) {
+		_, err := markdown.NewTableFormatterBuilder().
+			WithCustomSort(markdown.DESCENDING_ORDER.StringCompare(2)).
+			Build("header1", "header2").
+			Format([][]string{})
+
+		expected := "expected column index to be between 0 included and 2 excluded, got 2"
+		if err == nil || err.Error() != expected {
+			t.Errorf("Expected error with message %q, but got %v", expected, err)
+		}
+	})
+
+	st.Run("fails printing with repeated column index", func(t *testing.T) {
+		_, err := markdown.NewTableFormatterBuilder().
+			WithCustomSort(
+				markdown.DESCENDING_ORDER.StringCompare(1),
+				markdown.ASCENDING_ORDER.StringCompare(1),
+			).
+			Build("header1", "header2").
+			Format([][]string{})
+
+		expected := "expected at most 1 sort function for column index 1, found at least 2"
+		if err == nil || err.Error() != expected {
+			t.Errorf("Expected error with message %q, but got %v", expected, err)
+		}
+	})
+
 	st.Run("fails pretty-printing with too many sort functions", func(t *testing.T) {
 		_, err := markdown.NewTableFormatterBuilder().
 			WithCustomSort(
@@ -172,6 +199,35 @@ func TestSortedRendering(st *testing.T) {
 			Format([][]string{})
 
 		expected := "expected at most 2 sort functions, 3 given"
+		if err == nil || err.Error() != expected {
+			t.Errorf("Expected error with message %q, but got %v", expected, err)
+		}
+	})
+
+	st.Run("fails pretty-printing with too high column index", func(t *testing.T) {
+		_, err := markdown.NewTableFormatterBuilder().
+			WithCustomSort(markdown.DESCENDING_ORDER.StringCompare(2)).
+			WithPrettyPrint().
+			Build("header1", "header2").
+			Format([][]string{})
+
+		expected := "expected column index to be between 0 included and 2 excluded, got 2"
+		if err == nil || err.Error() != expected {
+			t.Errorf("Expected error with message %q, but got %v", expected, err)
+		}
+	})
+
+	st.Run("fails pretty-printing with repeated column index", func(t *testing.T) {
+		_, err := markdown.NewTableFormatterBuilder().
+			WithCustomSort(
+				markdown.DESCENDING_ORDER.StringCompare(1),
+				markdown.ASCENDING_ORDER.StringCompare(1),
+			).
+			WithPrettyPrint().
+			Build("header1", "header2").
+			Format([][]string{})
+
+		expected := "expected at most 1 sort function for column index 1, found at least 2"
 		if err == nil || err.Error() != expected {
 			t.Errorf("Expected error with message %q, but got %v", expected, err)
 		}
