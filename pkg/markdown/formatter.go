@@ -9,27 +9,36 @@ type TableFormatter interface {
 	Format(data [][]string) (string, error)
 }
 
-func newDefaultTableFormatter(headers []string) TableFormatter {
+func newDefaultTableFormatter(headers []string, sortFns []SortFunction) TableFormatter {
 	return &defaultTableFormatter{
-		config: &config{headers: headers},
+		config:  &config{headers: headers},
+		sortFns: sortFns,
 	}
 }
 
-func newPrettyTableFormatter(headers []string) TableFormatter {
+func newPrettyTableFormatter(headers []string, sortFns []SortFunction) TableFormatter {
 	return &prettyTableFormatter{
-		config: &config{headers: headers},
+		config:  &config{headers: headers},
+		sortFns: sortFns,
 	}
 }
 
 type defaultTableFormatter struct {
-	config *config
+	config  *config
+	sortFns []SortFunction
 }
 
-func (formatter *defaultTableFormatter) Format(data [][]string) (string, error) {
+func (dtf *defaultTableFormatter) Format(data [][]string) (string, error) {
+	// this could be checked before but would require incompatible API change
+	if err := checkSortingConfiguration(dtf.sortFns, dtf.config.headers); err != nil {
+		return "", err
+	}
+
+	SortTable(data, dtf.sortFns...)
 	builder := &strings.Builder{}
-	appendHeaders(builder, formatter.config.headers)
+	appendHeaders(builder, dtf.config.headers)
 	for rowIndex, row := range data {
-		if err := formatter.config.validateRow(rowIndex, row); err != nil {
+		if err := dtf.config.validateRow(rowIndex, row); err != nil {
 			return "", err
 		}
 		builder.WriteString(joinValues(row))
@@ -38,7 +47,8 @@ func (formatter *defaultTableFormatter) Format(data [][]string) (string, error) 
 }
 
 type prettyTableFormatter struct {
-	config *config
+	config  *config
+	sortFns []SortFunction
 }
 
 type prettyTable struct {
@@ -46,27 +56,32 @@ type prettyTable struct {
 	content [][]string
 }
 
-func (formatter *prettyTableFormatter) Format(data [][]string) (string, error) {
-	prettyTable, err := formatter.preComputeFormattedData(data)
+func (ptf *prettyTableFormatter) Format(data [][]string) (string, error) {
+	// this could be checked before but would require incompatible API change
+	if err := checkSortingConfiguration(ptf.sortFns, ptf.config.headers); err != nil {
+		return "", err
+	}
+	SortTable(data, ptf.sortFns...)
+	prettyTable, err := ptf.preComputeFormattedData(data)
 	if err != nil {
 		return "", err
 	}
 	widths := prettyTable.widths
 	builder := &strings.Builder{}
-	appendHeaders(builder, replacePadded(formatter.config.headers, widths))
+	appendHeaders(builder, replacePadded(ptf.config.headers, widths))
 	for _, row := range prettyTable.content {
 		builder.WriteString(joinValues(replacePadded(row, widths)))
 	}
 	return builder.String(), nil
 }
 
-func (formatter *prettyTableFormatter) preComputeFormattedData(data [][]string) (*prettyTable, error) {
+func (ptf *prettyTableFormatter) preComputeFormattedData(data [][]string) (*prettyTable, error) {
 	var widths []int
-	for _, header := range formatter.config.headers {
+	for _, header := range ptf.config.headers {
 		widths = append(widths, len(header))
 	}
 	for rowIndex, row := range data {
-		if err := formatter.config.validateRow(rowIndex, row); err != nil {
+		if err := ptf.config.validateRow(rowIndex, row); err != nil {
 			return nil, err
 		}
 		for columnIndex, cell := range row {
@@ -116,4 +131,22 @@ func replacePadded(items []string, widths []int) []string {
 		result = append(result, fmt.Sprintf(format, item))
 	}
 	return result
+}
+
+func checkSortingConfiguration(sortFns []SortFunction, headers []string) error {
+	if len(sortFns) > len(headers) {
+		return fmt.Errorf("expected at most %d sort functions, %d given", len(headers), len(sortFns))
+	}
+	columnCount := make(map[int]struct{}, len(headers))
+	for _, sortFn := range sortFns {
+		if sortFn.Column >= len(headers) {
+			return fmt.Errorf("expected column index to be between 0 included and %d excluded, got %d", len(headers), sortFn.Column)
+		}
+		if _, found := columnCount[sortFn.Column]; found {
+			return fmt.Errorf("expected at most 1 sort function for column index %d, found at least 2", sortFn.Column)
+		}
+		columnCount[sortFn.Column] = struct{}{}
+	}
+
+	return nil
 }
