@@ -9,14 +9,14 @@ type TableFormatter interface {
 	Format(data [][]string) (string, error)
 }
 
-func newDefaultTableFormatter(headers []string, sortFns []CompareColumnValuesFn) TableFormatter {
+func newDefaultTableFormatter(headers []string, sortFns []SortFunction) TableFormatter {
 	return &defaultTableFormatter{
 		config:  &config{headers: headers},
 		sortFns: sortFns,
 	}
 }
 
-func newPrettyTableFormatter(headers []string, sortFns []CompareColumnValuesFn) TableFormatter {
+func newPrettyTableFormatter(headers []string, sortFns []SortFunction) TableFormatter {
 	return &prettyTableFormatter{
 		config:  &config{headers: headers},
 		sortFns: sortFns,
@@ -25,7 +25,7 @@ func newPrettyTableFormatter(headers []string, sortFns []CompareColumnValuesFn) 
 
 type defaultTableFormatter struct {
 	config  *config
-	sortFns []CompareColumnValuesFn
+	sortFns []SortFunction
 }
 
 func (dtf *defaultTableFormatter) Format(data [][]string) (string, error) {
@@ -48,7 +48,7 @@ func (dtf *defaultTableFormatter) Format(data [][]string) (string, error) {
 
 type prettyTableFormatter struct {
 	config  *config
-	sortFns []CompareColumnValuesFn
+	sortFns []SortFunction
 }
 
 type prettyTable struct {
@@ -133,7 +133,7 @@ func replacePadded(items []string, widths []int) []string {
 	return result
 }
 
-func checkSortingConfiguration(sortFns []CompareColumnValuesFn, headers []string) error {
+func checkSortingConfiguration(sortFns []SortFunction, headers []string) error {
 	if len(sortFns) > len(headers) {
 		return fmt.Errorf("expected at most %d sort functions, %d given", len(headers), len(sortFns))
 	}

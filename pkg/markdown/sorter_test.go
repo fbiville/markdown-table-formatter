@@ -28,7 +28,7 @@ func TestSorting(st *testing.T) {
 	})
 
 	st.Run("does not sort by default, with nil slices of sorters", func(t *testing.T) {
-		var sortFns []CompareColumnValuesFn
+		var sortFns []SortFunction
 		data := [][]string{
 			{"b"},
 			{"a"},
@@ -54,7 +54,7 @@ func TestSorting(st *testing.T) {
 			{"c"},
 		}
 
-		SortTable(data, ASCENDING_ORDER.StringCompare)
+		SortTable(data, ASCENDING_ORDER.StringCompare(0))
 
 		expected := [][]string{
 			{"a"},
@@ -73,7 +73,7 @@ func TestSorting(st *testing.T) {
 			{"a", "z1"},
 		}
 
-		SortTable(data, ASCENDING_ORDER.StringCompare, DESCENDING_ORDER.StringCompare)
+		SortTable(data, ASCENDING_ORDER.StringCompare(0), DESCENDING_ORDER.StringCompare(1))
 
 		expected := [][]string{
 			{"a", "z1"},
@@ -85,14 +85,33 @@ func TestSorting(st *testing.T) {
 		}
 	})
 
-	st.Run("sort according to first column, re-arranges the rest", func(t *testing.T) {
+	st.Run("sorts columns with multiple functions in different column order", func(t *testing.T) {
+		data := [][]string{
+			{"b", "z1"},
+			{"a", "b1"},
+			{"z", "b1"},
+		}
+
+		SortTable(data, ASCENDING_ORDER.StringCompare(1), DESCENDING_ORDER.StringCompare(0))
+
+		expected := [][]string{
+			{"z", "b1"},
+			{"a", "b1"},
+			{"b", "z1"},
+		}
+		if !reflect.DeepEqual(expected, data) {
+			t.Errorf("Expected %v, got %v", expected, data)
+		}
+	})
+
+	st.Run("sorts according to first column, re-arranges the rest", func(t *testing.T) {
 		data := [][]string{
 			{"b", "b1"},
 			{"a", "a1"},
 			{"c", "c1"},
 		}
 
-		SortTable(data, ASCENDING_ORDER.StringCompare)
+		SortTable(data, ASCENDING_ORDER.StringCompare(0))
 
 		expected := [][]string{
 			{"a", "a1"},
@@ -104,18 +123,56 @@ func TestSorting(st *testing.T) {
 		}
 	})
 
-	st.Run("sort according to first n columns, re-arranges the rest", func(t *testing.T) {
+	st.Run("sorts according to second column, re-arranges the rest", func(t *testing.T) {
+		data := [][]string{
+			{"b", "b1"},
+			{"a", "a1"},
+			{"c", "c1"},
+		}
+
+		SortTable(data, DESCENDING_ORDER.StringCompare(1))
+
+		expected := [][]string{
+			{"c", "c1"},
+			{"b", "b1"},
+			{"a", "a1"},
+		}
+		if !reflect.DeepEqual(expected, data) {
+			t.Errorf("Expected %v, got %v", expected, data)
+		}
+	})
+
+	st.Run("sorts according to first n columns, re-arranges the rest", func(t *testing.T) {
 		data := [][]string{
 			{"b", "b1", "b2"},
 			{"a", "a1", "a2"},
 			{"a", "z1", "z2"},
 		}
 
-		SortTable(data, ASCENDING_ORDER.StringCompare, DESCENDING_ORDER.StringCompare)
+		SortTable(data, ASCENDING_ORDER.StringCompare(0), DESCENDING_ORDER.StringCompare(1))
 
 		expected := [][]string{
 			{"a", "z1", "z2"},
 			{"a", "a1", "a2"},
+			{"b", "b1", "b2"},
+		}
+		if !reflect.DeepEqual(expected, data) {
+			t.Errorf("Expected %v, got %v", expected, data)
+		}
+	})
+
+	st.Run("sorts according to some unordered columns, re-arranges the rest", func(t *testing.T) {
+		data := [][]string{
+			{"b", "b1", "b2"},
+			{"a", "a1", "b2"},
+			{"a", "z1", "z2"},
+		}
+
+		SortTable(data, DESCENDING_ORDER.StringCompare(2), ASCENDING_ORDER.StringCompare(0))
+
+		expected := [][]string{
+			{"a", "z1", "z2"},
+			{"a", "a1", "b2"},
 			{"b", "b1", "b2"},
 		}
 		if !reflect.DeepEqual(expected, data) {

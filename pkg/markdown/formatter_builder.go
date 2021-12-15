@@ -6,7 +6,7 @@ func NewTableFormatterBuilder() *tableFormatterBuilder {
 
 type tableFormatterBuilder struct {
 	alphaSortDirection SortDirection
-	customSortFns      []CompareColumnValuesFn
+	customSortFns      []SortFunction
 }
 
 func (tfb *tableFormatterBuilder) WithAlphabeticalSortIn(direction SortDirection) *tableFormatterBuilder {
@@ -14,7 +14,7 @@ func (tfb *tableFormatterBuilder) WithAlphabeticalSortIn(direction SortDirection
 	return tfb
 }
 
-func (tfb *tableFormatterBuilder) WithCustomSort(sortFns ...CompareColumnValuesFn) *tableFormatterBuilder {
+func (tfb *tableFormatterBuilder) WithCustomSort(sortFns ...SortFunction) *tableFormatterBuilder {
 	tfb.customSortFns = sortFns
 	return tfb
 }
@@ -35,7 +35,7 @@ func (tfb *tableFormatterBuilder) WithPrettyPrint() *prettyTableFormatterBuilder
 
 type prettyTableFormatterBuilder struct {
 	alphaSortDirection SortDirection
-	customSortFns      []CompareColumnValuesFn
+	customSortFns      []SortFunction
 }
 
 func (ptfb *prettyTableFormatterBuilder) Build(headers ...string) TableFormatter {
@@ -45,14 +45,14 @@ func (ptfb *prettyTableFormatterBuilder) Build(headers ...string) TableFormatter
 	)
 }
 
-func sortFunctions(customSortFns []CompareColumnValuesFn, alphaSortDirection SortDirection, headers []string) []CompareColumnValuesFn {
+func sortFunctions(customSortFns []SortFunction, alphaSortDirection SortDirection, headers []string) []SortFunction {
 	if len(customSortFns) > 0 {
 		return customSortFns
 	}
 	if alphaSortDirection != noDirection {
-		result := make([]CompareColumnValuesFn, len(headers))
+		result := make([]SortFunction, len(headers))
 		for i := 0; i < len(headers); i++ {
-			result[i] = alphaSortDirection.StringCompare
+			result[i] = alphaSortDirection.StringCompare(i)
 		}
 		return result
 	}

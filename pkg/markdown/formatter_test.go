@@ -148,7 +148,10 @@ func TestSortedRendering(st *testing.T) {
 
 	st.Run("fails printing with too many sort functions", func(t *testing.T) {
 		_, err := markdown.NewTableFormatterBuilder().
-			WithCustomSort(strings.Compare, strings.Compare, strings.Compare).
+			WithCustomSort(
+				markdown.DESCENDING_ORDER.StringCompare(0),
+				markdown.DESCENDING_ORDER.StringCompare(1),
+				markdown.DESCENDING_ORDER.StringCompare(2)).
 			Build("header1", "header2").
 			Format([][]string{})
 
@@ -160,7 +163,10 @@ func TestSortedRendering(st *testing.T) {
 
 	st.Run("fails pretty-printing with too many sort functions", func(t *testing.T) {
 		_, err := markdown.NewTableFormatterBuilder().
-			WithCustomSort(strings.Compare, strings.Compare, strings.Compare).
+			WithCustomSort(
+				markdown.DESCENDING_ORDER.StringCompare(0),
+				markdown.DESCENDING_ORDER.StringCompare(1),
+				markdown.DESCENDING_ORDER.StringCompare(2)).
 			WithPrettyPrint().
 			Build("header1", "header2").
 			Format([][]string{})
